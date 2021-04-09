@@ -24,8 +24,44 @@
   #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
 #endif
 
+void taskHandler1(void);
+void taskHandler2(void);
+void taskHandler3(void);
+void taskHandler4(void);
+
+
 int main(void)
 {
     printf("Hello Embedded World!\n");
 	for(;;);
 }
+
+void taskHandler1(void)
+{
+	for(;;)
+	{
+		printf("This is task 1!\n");
+	}
+}
+void taskHandler2(void)
+{
+	for(;;)
+	{
+		printf("This is task 2!\n");
+	}
+}
+void taskHandler3(void)
+{
+	for(;;)
+	{
+		printf("This is task 3!\n");
+	}
+}
+void taskHandler4(void)
+{
+	for(;;)
+	{
+		printf("This is task 4!\n");
+	}
+}
+
