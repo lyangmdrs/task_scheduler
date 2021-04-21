@@ -17,12 +17,33 @@
  ******************************************************************************
  */
 
-#include <stdint.h>
 #include <stdio.h>
 
 #if !defined(__SOFT_FP__) && defined(__ARM_FP)
   #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
 #endif
+
+/* Calculations to stack division */
+
+#define SIZE_TASK_STACK 	1024U
+#define SIZE_SCHED_STACK 	1024U
+
+#define SRAM_START			0x20000000U
+#define SRAM_SIZE           (128 * 1024)
+#define SRAM_END			(SRAM_START + SRAM_SIZE)
+
+#define T1_STACK_START 		SRAM_END
+#define T2_STACK_START		(SRAM_END - SIZE_TASK_STACK)
+#define T3_STACK_START		(SRAM_END - 2 * SIZE_TASK_STACK)
+#define T4_STACK_START		(SRAM_END - 3 * SIZE_TASK_STACK)
+#define SCHED_STACK_START	(SRAM_END - 4 * SIZE_TASK_STACK)
+
+/* End of calculations to stack division */
+
+#define HSI_CLOCK	0XF42400U // = 16*10^6
+#define TICK_HZ 	1000U
+
+void init_systick_timer(uint32_t tick_hz);
 
 void taskHandler1(void);
 void taskHandler2(void);
@@ -33,7 +54,55 @@ void taskHandler4(void);
 int main(void)
 {
     printf("Hello Embedded World!\n");
+
+    init_systick_timer(TICK_HZ);
+
 	for(;;);
+}
+
+/*
+ * This microcontroller family has a system timer, called SysTick. This timer is
+ * configured thru 4 dedicated registers. Which are:
+ * 			> SYST_CSR 		- SysTick Control and Status Register 	- 0xE000E010
+ * 			> SYST_RVR 		- SysTick Reload Value Register 		- 0xE000E014
+ * 			> SYST_CVR		- SysTick Current Value Register 		- 0xE000E018
+ * 			> SYST_CALIB	- SysTick Calibration Value Register	- 0xE000E01C
+ * The SysTick counts down from the reload value to zero, reloads with the value
+ * in SYST_RVR, then counts down again, repeating the whole process.
+ */
+void init_systick_timer(uint32_t tick_hz)
+{
+	uint32_t *pSCSR = (uint32_t *) 0xE000E010;
+	uint32_t *pSRVR = (uint32_t *) 0xE000E014;
+
+	uint32_t count_value = (HSI_CLOCK / tick_hz) - 1;
+
+	/* Reseting the value of SYST_RVR
+	*		The bits from 24 to 31 are reserved in this register. So, we must clear
+	*		only the bits from 0 to 23.
+	*/
+	*pSRVR &= ~(0x00FFFFFFFF);
+
+	// Loading count_value to SYST_RVR
+	*pSRVR |= count_value;
+
+	/* The first three bit of SYST_CSR are used to configure the SysTick.
+	 * 		> Bit 0: Enables the counter when it's value is 1;
+	 * 		> Bit 1: Sets an exception to indicate when the counting reaches 0,
+	 * 		         when it's value is 1;
+	 * 		> Bit 2: Sets the clock source. If this bit is 0, the clock source
+	 * 		         will be a external clock. If this bit is 1, the clock source
+	 * 		         will be the processor's clock.
+	 */
+
+	// Setting the SysTick clock source to use the processor clock
+	*pSCSR |= (1 << 2);
+
+	// Enabling the SysTick exception request
+	*pSCSR |= (1 << 1);
+
+	// Enabling the counter
+	*pSCSR |= (1 << 0);
 }
 
 void taskHandler1(void)
@@ -65,3 +134,7 @@ void taskHandler4(void)
 	}
 }
 
+void SysTick_Handler(void)
+{
+	printf("On %s()\n", __FUNCTION__);
+}
