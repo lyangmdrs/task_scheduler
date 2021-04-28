@@ -57,4 +57,4 @@ dkms.conf
 # Directories
 Debug/
 Release/
-.settings/language.settings.xml
+.settings/
