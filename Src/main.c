@@ -123,11 +123,14 @@ __attribute__((naked))
 void init_scheduler_stack(uint32_t stack_start_address)
 {
 	/* Changing the value of Main Stack Pointer (MSP)
-	*	- MSP is copied to SP when the processor enters in thread mode.
-	*	- So, if MSP is holding the initial address of scheduler's stack
-	*	every time the processor enters in thread mode, the SP will points
-	*	to scheduler stack.
-	*/
+	 *  - By default, SP points to MSP;
+	 *	- Every time that the processor enters in thread mode, SP will
+	 *	point to MSP;
+	 *	- So, if MSP is holding the initial address of scheduler's stack,
+	 *	SP will point by default to this address and if, for some reason,
+	 *	SP starts to point to PSP, every time the processor enters in
+	 *	thread mode, the SP will points to scheduler stack.
+	 */
 	__asm volatile("MSR MSP, R0"); // Moves the value from 1st argument on MSP
 	__asm volatile("BX LR"); // Returns to caller
 }
