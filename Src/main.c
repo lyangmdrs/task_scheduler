@@ -23,7 +23,7 @@
   #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
 #endif
 
-/* Calculations to stack division */
+/* Definitions to stack division */
 
 #define SIZE_TASK_STACK 	1024U
 #define SIZE_SCHED_STACK 	1024U
@@ -38,12 +38,23 @@
 #define T4_STACK_START		(SRAM_END - 3 * SIZE_TASK_STACK)
 #define SCHED_STACK_START	(SRAM_END - 4 * SIZE_TASK_STACK)
 
-/* End of calculations to stack division */
+/* End of definitions to stack division */
+
+//-----------------------------------------------------------------------------//
+
+/* Definitions to SysTick settings */
 
 #define HSI_CLOCK	0XF42400U // = 16*10^6
 #define TICK_HZ 	1000U
 
+/* End of definitions to SysTick settings */
+
+//-----------------------------------------------------------------------------//
+
 void init_systick_timer(uint32_t tick_hz);
+
+__attribute__((naked))
+void init_scheduler_stack(uint32_t stack_start_address);
 
 void taskHandler1(void);
 void taskHandler2(void);
@@ -54,6 +65,8 @@ void taskHandler4(void);
 int main(void)
 {
     printf("Hello Embedded World!\n");
+
+    init_scheduler_stack(SCHED_STACK_START);
 
     init_systick_timer(TICK_HZ);
 
@@ -103,6 +116,20 @@ void init_systick_timer(uint32_t tick_hz)
 
 	// Enabling the counter
 	*pSCSR |= (1 << 0);
+}
+
+
+__attribute__((naked))
+void init_scheduler_stack(uint32_t stack_start_address)
+{
+	/* Changing the value of Main Stack Pointer (MSP)
+	*	- MSP is copied to SP when the processor enters in thread mode.
+	*	- So, if MSP is holding the initial address of scheduler's stack
+	*	every time the processor enters in thread mode, the SP will points
+	*	to scheduler stack.
+	*/
+	__asm volatile("MSR MSP, R0"); // Moves the value from 1st argument on MSP
+	__asm volatile("BX LR"); // Returns to caller
 }
 
 void taskHandler1(void)
