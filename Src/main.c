@@ -24,7 +24,7 @@ int main(void)
     printf("Hello Embedded World!\n");
 
     init_scheduler_stack(SCHED_STACK_START);
-
+    init_task_stack();
     init_systick_timer(TICK_HZ);
 
 	for(;;);
@@ -94,7 +94,53 @@ void init_scheduler_stack(uint32_t stack_start_address)
 
 void init_task_stack (void)
 {
+	/*
+	 * Initiating all tasks stack with dummy data
+	 */
 
+	uint32_t *pPSP;
+
+	// The stack operation model for Cortex-M4 processors is Full
+	// Descending. Thus, we need decrement the memory address before
+	// pushing data.
+	for (int i = 0; i < MAX_TASKS; i++)
+	{
+		pPSP = pPSP - 1;
+		// Program Status Register (PSR)
+		/*
+		 * Given that the Cortex-M4 processor only supports execution of
+		 * instructions in Thumb state, we must pay attention to always set
+		 * this register with it's T bit as 1.
+		 *
+		 * View pages 17 and 20 of Cortex-M4 Devices - Generic User Guide
+		 *
+		 */
+		*pPSP = DUMMY_XPSR;
+
+		pPSP = pPSP - 1;
+		// Program Counter (PC)
+		*pPSP = (uint32_t)handles_of_tasks[i];
+
+		pPSP = pPSP - 1;
+		// Link Register (LR)
+		/*
+		 * The context switching happens inside of a exception. So, at this point
+		 * LR must be loaded with one of the EXC_RETURN values.
+		 *
+		 * View pages 41 of Cortex-M4 Devices - Generic User Guide
+		 *
+		 */
+		*pPSP = DUMMY_LR;
+
+		// Initiate the remaining registers with zero
+		for (int k = 0; k < 13; k++)
+		{
+			pPSP = pPSP - 1;
+			*pPSP = 0;
+		}
+
+		psp_of_tasks[i] = (uint32_t)pPSP;
+	}
 }
 
 void taskHandler1(void)
