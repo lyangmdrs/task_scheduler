@@ -56,6 +56,10 @@ void init_systick_timer(uint32_t tick_hz);
 
 __attribute__((naked))
 void init_scheduler_stack(uint32_t stack_start_address);
+__attribute__((naked))
+void switch_sp_to_psp(void);
+
+uint32_t get_psp_value(void);
 
 void init_task_stack (void);
 
@@ -64,7 +68,7 @@ void taskHandler2(void);
 void taskHandler3(void);
 void taskHandler4(void);
 
-
+uint8_t current_task = 0;
 uint32_t psp_of_tasks[MAX_TASKS] = {T1_STACK_START,
 									T2_STACK_START,
 									T3_STACK_START,

@@ -153,6 +153,27 @@ void init_task_stack (void)
 	}
 }
 
+uint32_t get_psp_value(void)
+{
+	return psp_of_tasks[current_task];
+}
+
+__attribute__((naked))
+void switch_sp_to_psp(void)
+{
+	// Initialize PSP
+
+	__asm volatile ("PUSH {LR}");
+	__asm volatile ("BL get_psp_value");
+	__asm volatile ("MSR PSP, R0");
+	__asm volatile ("POP {LR}");
+
+	// Point SP to PSP
+	__asm volatile ("MOV R0, #0x02");
+	__asm volatile ("MSR CONTROL, R0");
+	__asm volatile ("BX LR");
+}
+
 void taskHandler1(void)
 {
 	for(;;)
