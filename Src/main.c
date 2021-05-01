@@ -51,6 +51,13 @@
 
 //-----------------------------------------------------------------------------//
 
+/* Constants Definitions */
+
+#define MAX_TASKS 4
+
+/* Constants Definitions */
+
+//-----------------------------------------------------------------------------//
 void init_systick_timer(uint32_t tick_hz);
 
 __attribute__((naked))
@@ -61,6 +68,7 @@ void taskHandler2(void);
 void taskHandler3(void);
 void taskHandler4(void);
 
+uint32_t psp_of_tasks[MAX_TASKS];
 
 int main(void)
 {
@@ -133,6 +141,11 @@ void init_scheduler_stack(uint32_t stack_start_address)
 	 */
 	__asm volatile("MSR MSP, R0"); // Moves the value from 1st argument on MSP
 	__asm volatile("BX LR"); // Returns to caller
+}
+
+void init_task_stack (void)
+{
+
 }
 
 void taskHandler1(void)
