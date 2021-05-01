@@ -23,11 +23,21 @@ int main(void)
 {
     printf("Hello Embedded World!\n");
 
+    enable_processors_fauts();
+
     init_scheduler_stack(SCHED_STACK_START);
     init_task_stack();
     init_systick_timer(TICK_HZ);
 
 	for(;;);
+}
+
+void enable_processors_fauts(void)
+{
+	uint32_t *pSHCSR = (uint32_t *)0xE000ED24; // System Handler Control and State Register
+	*pSHCSR |= (1 << 16); // Memory Management fault;
+	*pSHCSR |= (1 << 17); // Bus Fault;
+	*pSHCSR |= (1 << 18); // Usage Fault;
 }
 
 /*
@@ -175,4 +185,28 @@ void taskHandler4(void)
 void SysTick_Handler(void)
 {
 	printf("On %s()\n", __FUNCTION__);
+}
+
+
+void HardFault_Handler(void)
+{
+	printf("System Fault: %s!\n", __FUNCTION__);
+	for(;;);
+}
+
+void MemManage_Handler(void)
+{
+	printf("System Fault: %s!\n", __FUNCTION__);
+	for(;;);
+}
+void BusFault_Handler(void)
+{
+	printf("System Fault: %s!\n", __FUNCTION__);
+	for(;;);
+}
+
+void UsageFault_Handler(void)
+{
+	printf("System Fault: %s!\n", __FUNCTION__);
+	for(;;);
 }
