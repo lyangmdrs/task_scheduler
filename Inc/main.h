@@ -44,18 +44,13 @@
 
 /* Constants Definitions */
 
-#define MAX_TASKS 4
+#define MAX_TASKS 	4
+#define DUMMY_XPSR 	0x01000000
 
 /* Constants Definitions */
 
 //-----------------------------------------------------------------------------//
 void init_systick_timer(uint32_t tick_hz);
-
-
-uint32_t psp_of_tasks[MAX_TASKS] =
-{
-	T1_STACK_START, T2_STACK_START, T3_STACK_START, T4_STACK_START
-};
 
 
 __attribute__((naked))
@@ -68,5 +63,15 @@ void taskHandler2(void);
 void taskHandler3(void);
 void taskHandler4(void);
 
+
+uint32_t psp_of_tasks[MAX_TASKS] = {T1_STACK_START,
+									T2_STACK_START,
+									T3_STACK_START,
+									T4_STACK_START};
+
+uint32_t handles_of_tasks[MAX_TASKS] = {taskHandler1,
+										taskHandler2,
+										taskHandler3,
+										taskHandler4};
 
 #endif /* MAIN_H_ */
