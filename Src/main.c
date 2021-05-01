@@ -43,8 +43,8 @@ void enable_processors_fauts(void)
 /*
  * This microcontroller family has a system timer, called SysTick. This timer is
  * configured thru 4 dedicated registers. Which are:
- * 			> SYST_CSR 		- SysTick Control and Status Register	- 0xE000E010
- * 			> SYST_RVR 		- SysTick Reload Value Register			- 0xE000E014
+ * 			> SYST_CSR		- SysTick Control and Status Register	- 0xE000E010
+ * 			> SYST_RVR		- SysTick Reload Value Register			- 0xE000E014
  * 			> SYST_CVR		- SysTick Current Value Register		- 0xE000E018
  * 			> SYST_CALIB	- SysTick Calibration Value Register	- 0xE000E01C
  * The SysTick counts down from the reload value to zero, reloads with the value
