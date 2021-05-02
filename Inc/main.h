@@ -60,6 +60,8 @@ __attribute__((naked))
 void switch_sp_to_psp(void);
 
 uint32_t get_psp_value(void);
+void save_psp_value (uint32_t stack_addr);
+void update_next_task(void);
 
 void init_task_stack (void);
 

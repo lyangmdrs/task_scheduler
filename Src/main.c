@@ -29,7 +29,11 @@ int main(void)
     init_task_stack();
     init_systick_timer(TICK_HZ);
 
-	for(;;);
+    switch_sp_to_psp();
+
+    taskHandler1();
+
+    for(;;);
 }
 
 void enable_processors_fauts(void)
@@ -85,7 +89,6 @@ void init_systick_timer(uint32_t tick_hz)
 	*pSCSR |= (1 << 0);
 }
 
-
 __attribute__((naked))
 void init_scheduler_stack(uint32_t stack_start_address)
 {
@@ -115,6 +118,8 @@ void init_task_stack (void)
 	// pushing data.
 	for (int i = 0; i < MAX_TASKS; i++)
 	{
+		pPSP = (uint32_t*)psp_of_tasks[i];
+
 		pPSP = pPSP - 1;
 		// Program Status Register (PSR)
 		/*
@@ -158,6 +163,16 @@ uint32_t get_psp_value(void)
 	return psp_of_tasks[current_task];
 }
 
+void save_psp_value (uint32_t current_psp_value)
+{
+	psp_of_tasks[current_task] = current_psp_value;
+}
+
+void update_next_task(void)
+{
+	current_task = (current_task + 1) % MAX_TASKS;
+}
+
 __attribute__((naked))
 void switch_sp_to_psp(void)
 {
@@ -181,6 +196,7 @@ void taskHandler1(void)
 		printf("This is task 1!\n");
 	}
 }
+
 void taskHandler2(void)
 {
 	for(;;)
@@ -188,6 +204,7 @@ void taskHandler2(void)
 		printf("This is task 2!\n");
 	}
 }
+
 void taskHandler3(void)
 {
 	for(;;)
@@ -195,6 +212,7 @@ void taskHandler3(void)
 		printf("This is task 3!\n");
 	}
 }
+
 void taskHandler4(void)
 {
 	for(;;)
@@ -203,11 +221,32 @@ void taskHandler4(void)
 	}
 }
 
+__attribute__((naked))
 void SysTick_Handler(void)
 {
-	/* Save the context of current task */
+	// Get PSP value of the current running task
+	__asm volatile ("MRS R0, PSP");
+	// Save the context of current task
+	// Store Multiple Register, decrement before (STMBD)
+	__asm volatile ("STMDB R0!, {R4-R11}");
+	// Save LR before using BL instruction
+	__asm volatile ("PUSH {LR}");
+	// Save the current value of PSP
+	__asm volatile ("BL save_psp_value");
+	// Load the next task
+	__asm volatile ("BL update_next_task");
+	// Get the new task PSP
+	__asm volatile ("BL get_psp_value");
+	// Retrieve the Stack Frame 2 to the new task
+	__asm volatile ("LDMIA R0!, {R4-R11}");
+	// Update PSP
+	__asm volatile ("MSR PSP, R0");
+	// Retrieve the saved LR value
+	__asm volatile ("POP {LR}");
+	// In a naked function we must load PC with the
+	// address to the next function in order to exit
+	__asm volatile ("BX LR");
 }
-
 
 void HardFault_Handler(void)
 {
@@ -220,6 +259,7 @@ void MemManage_Handler(void)
 	printf("System Fault: %s!\n", __FUNCTION__);
 	for(;;);
 }
+
 void BusFault_Handler(void)
 {
 	printf("System Fault: %s!\n", __FUNCTION__);
