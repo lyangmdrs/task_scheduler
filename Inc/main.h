@@ -47,6 +47,8 @@
 #define MAX_TASKS 	4
 #define DUMMY_XPSR 	0x01000000U
 #define DUMMY_LR	0xFFFFFFFDU
+#define TASK_RUNNIG_STATE 1
+#define TASK_BLOCKED_STATE 0
 /* Constants Definitions */
 
 //-----------------------------------------------------------------------------//
@@ -70,15 +72,17 @@ void taskHandler2(void);
 void taskHandler3(void);
 void taskHandler4(void);
 
-uint8_t current_task = 0;
-uint32_t psp_of_tasks[MAX_TASKS] = {T1_STACK_START,
-									T2_STACK_START,
-									T3_STACK_START,
-									T4_STACK_START};
+typedef struct
+{
+	uint32_t psp_value;
+	uint32_t block_count;
+	uint8_t current_state;
+	void (*taskHandler)(void);
+}TCB_t; // Task Control Block
 
-uint32_t handles_of_tasks[MAX_TASKS] = {(uint32_t)taskHandler1,
-										(uint32_t)taskHandler2,
-										(uint32_t)taskHandler3,
-										(uint32_t)taskHandler4};
+TCB_t user_tasks[MAX_TASKS];
+
+uint8_t current_task = 0;
+
 
 #endif /* MAIN_H_ */

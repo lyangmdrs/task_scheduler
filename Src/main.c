@@ -113,12 +113,30 @@ void init_task_stack (void)
 
 	uint32_t *pPSP;
 
+
+	user_tasks[0].current_state = TASK_RUNNIG_STATE;
+	user_tasks[0].psp_value = T1_STACK_START;
+	user_tasks[0].taskHandler = taskHandler1;
+
+	user_tasks[1].current_state = TASK_RUNNIG_STATE;
+	user_tasks[1].psp_value = T2_STACK_START;
+	user_tasks[1].taskHandler = taskHandler2;
+
+	user_tasks[2].current_state = TASK_RUNNIG_STATE;
+	user_tasks[2].psp_value = T3_STACK_START;
+	user_tasks[2].taskHandler = taskHandler3;
+
+	user_tasks[3].current_state = TASK_RUNNIG_STATE;
+	user_tasks[3].psp_value = T4_STACK_START;
+	user_tasks[3].taskHandler = taskHandler4;
+
+
 	// The stack operation model for Cortex-M4 processors is Full
 	// Descending. Thus, we need decrement the memory address before
 	// pushing data.
 	for (int i = 0; i < MAX_TASKS; i++)
 	{
-		pPSP = (uint32_t*)psp_of_tasks[i];
+		pPSP = (uint32_t*)user_tasks[i].psp_value;
 
 		pPSP = pPSP - 1;
 		// Program Status Register (PSR)
@@ -134,7 +152,7 @@ void init_task_stack (void)
 
 		pPSP = pPSP - 1;
 		// Program Counter (PC)
-		*pPSP = (uint32_t)handles_of_tasks[i];
+		*pPSP = (uint32_t)user_tasks[i].taskHandler;
 
 		pPSP = pPSP - 1;
 		// Link Register (LR)
@@ -154,18 +172,18 @@ void init_task_stack (void)
 			*pPSP = 0;
 		}
 
-		psp_of_tasks[i] = (uint32_t)pPSP;
+		user_tasks[i].psp_value = (uint32_t)pPSP;
 	}
 }
 
 uint32_t get_psp_value(void)
 {
-	return psp_of_tasks[current_task];
+	return user_tasks[current_task].psp_value;
 }
 
 void save_psp_value (uint32_t current_psp_value)
 {
-	psp_of_tasks[current_task] = current_psp_value;
+	user_tasks[current_task].psp_value = current_psp_value;
 }
 
 void update_next_task(void)
