@@ -58,3 +58,4 @@ dkms.conf
 Debug/
 Release/
 .settings/
+.settings/language.settings.xml
