@@ -2,7 +2,7 @@
 
 ***
 
-# STM32F047VET6 Studies
+# Task Scheduler
 
 ***
 
