@@ -27,7 +27,8 @@
 #define T2_STACK_START		(SRAM_END - SIZE_TASK_STACK)
 #define T3_STACK_START		(SRAM_END - 2 * SIZE_TASK_STACK)
 #define T4_STACK_START		(SRAM_END - 3 * SIZE_TASK_STACK)
-#define SCHED_STACK_START	(SRAM_END - 4 * SIZE_TASK_STACK)
+#define IDLE_STACK_START    (SRAM_END - 4 * SIZE_TASK_STACK)
+#define SCHED_STACK_START	(SRAM_END - 5 * SIZE_TASK_STACK)
 
 /* End of definitions to stack division */
 
@@ -44,11 +45,11 @@
 
 /* Constants Definitions */
 
-#define MAX_TASKS 	4
+#define MAX_TASKS 	5
 #define DUMMY_XPSR 	0x01000000U
 #define DUMMY_LR	0xFFFFFFFDU
-#define TASK_RUNNIG_STATE 1
-#define TASK_BLOCKED_STATE 0
+#define TASK_READY_STATE 0x00
+#define TASK_BLOCKED_STATE 0xFF
 /* Constants Definitions */
 
 //-----------------------------------------------------------------------------//
@@ -72,6 +73,11 @@ void taskHandler2(void);
 void taskHandler3(void);
 void taskHandler4(void);
 
+void idle_task(void);
+void schedule(void);
+void task_delay(uint32_t tick_count);
+void update_global_tick_count(void);
+void unblock_tasks(void);
 typedef struct
 {
 	uint32_t psp_value;
@@ -82,7 +88,7 @@ typedef struct
 
 TCB_t user_tasks[MAX_TASKS];
 
-uint8_t current_task = 0;
-
+uint8_t current_task = 1;
+uint32_t global_tick_count = 0;
 
 #endif /* MAIN_H_ */

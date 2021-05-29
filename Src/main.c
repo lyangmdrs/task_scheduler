@@ -113,22 +113,25 @@ void init_task_stack (void)
 
 	uint32_t *pPSP;
 
+	user_tasks[0].current_state = TASK_READY_STATE;
+	user_tasks[0].psp_value = IDLE_STACK_START;
+	user_tasks[0].taskHandler = idle_task;
 
-	user_tasks[0].current_state = TASK_RUNNIG_STATE;
-	user_tasks[0].psp_value = T1_STACK_START;
-	user_tasks[0].taskHandler = taskHandler1;
+	user_tasks[1].current_state = TASK_READY_STATE;
+	user_tasks[1].psp_value = T1_STACK_START;
+	user_tasks[1].taskHandler = taskHandler1;
 
-	user_tasks[1].current_state = TASK_RUNNIG_STATE;
-	user_tasks[1].psp_value = T2_STACK_START;
-	user_tasks[1].taskHandler = taskHandler2;
+	user_tasks[2].current_state = TASK_READY_STATE;
+	user_tasks[2].psp_value = T2_STACK_START;
+	user_tasks[2].taskHandler = taskHandler2;
 
-	user_tasks[2].current_state = TASK_RUNNIG_STATE;
-	user_tasks[2].psp_value = T3_STACK_START;
-	user_tasks[2].taskHandler = taskHandler3;
+	user_tasks[3].current_state = TASK_READY_STATE;
+	user_tasks[3].psp_value = T3_STACK_START;
+	user_tasks[3].taskHandler = taskHandler3;
 
-	user_tasks[3].current_state = TASK_RUNNIG_STATE;
-	user_tasks[3].psp_value = T4_STACK_START;
-	user_tasks[3].taskHandler = taskHandler4;
+	user_tasks[4].current_state = TASK_READY_STATE;
+	user_tasks[4].psp_value = T4_STACK_START;
+	user_tasks[4].taskHandler = taskHandler4;
 
 
 	// The stack operation model for Cortex-M4 processors is Full
@@ -188,7 +191,16 @@ void save_psp_value (uint32_t current_psp_value)
 
 void update_next_task(void)
 {
-	current_task = (current_task + 1) % MAX_TASKS;
+	int state = TASK_BLOCKED_STATE;
+
+	for(int i = 0; i < (MAX_TASKS); i++)
+	{
+		current_task = (current_task + 1) % MAX_TASKS;
+		state = user_tasks[current_task].current_state;
+		if((state == TASK_READY_STATE) && (current_task != 0)) break;
+	}
+
+	if(state != TASK_READY_STATE) current_task = 0;
 }
 
 __attribute__((naked))
@@ -212,6 +224,7 @@ void taskHandler1(void)
 	for(;;)
 	{
 		printf("This is task 1!\n");
+		task_delay(10);
 	}
 }
 
@@ -220,6 +233,7 @@ void taskHandler2(void)
 	for(;;)
 	{
 		printf("This is task 2!\n");
+		task_delay(20);
 	}
 }
 
@@ -228,6 +242,7 @@ void taskHandler3(void)
 	for(;;)
 	{
 		printf("This is task 3!\n");
+		task_delay(30);
 	}
 }
 
@@ -236,34 +251,84 @@ void taskHandler4(void)
 	for(;;)
 	{
 		printf("This is task 4!\n");
+		task_delay(40);
 	}
 }
 
-__attribute__((naked))
+void idle_task(void)
+{
+	for(;;);
+}
+
+void schedule(void)
+{
+	uint32_t *pICSR = (uint32_t *)0xE000ED04;
+	// Pend a exception on PendSV
+	*pICSR |= (1 << 28);
+}
+
+void task_delay(uint32_t tick_count)
+{
+	user_tasks[current_task].block_count = global_tick_count + tick_count;
+	user_tasks[current_task].current_state = TASK_BLOCKED_STATE;
+	schedule();
+}
+
+void update_global_tick_count(void)
+{
+	global_tick_count = global_tick_count + 1;
+}
+
+void unblock_tasks(void)
+{
+	for(int i = 1; i < MAX_TASKS; i++)
+	{
+		if(user_tasks[i].current_state != TASK_READY_STATE)
+		{
+			if(user_tasks[i].block_count == global_tick_count)
+			{
+				user_tasks[i].current_state = TASK_READY_STATE;
+			}
+		}
+	}
+}
+
 void SysTick_Handler(void)
 {
+	uint32_t *pICSR = (uint32_t *)0xE000ED04;
+
+	update_global_tick_count();
+	unblock_tasks();
+
+	// Pend a exception on PendSV
+	*pICSR |= (1 << 28);
+}
+
+__attribute__((naked))
+void PendSV_Handler(void)
+{
 	// Get PSP value of the current running task
-	__asm volatile ("MRS R0, PSP");
-	// Save the context of current task
-	// Store Multiple Register, decrement before (STMBD)
-	__asm volatile ("STMDB R0!, {R4-R11}");
-	// Save LR before using BL instruction
-	__asm volatile ("PUSH {LR}");
-	// Save the current value of PSP
-	__asm volatile ("BL save_psp_value");
-	// Load the next task
-	__asm volatile ("BL update_next_task");
-	// Get the new task PSP
-	__asm volatile ("BL get_psp_value");
-	// Retrieve the Stack Frame 2 to the new task
-	__asm volatile ("LDMIA R0!, {R4-R11}");
-	// Update PSP
-	__asm volatile ("MSR PSP, R0");
-	// Retrieve the saved LR value
-	__asm volatile ("POP {LR}");
-	// In a naked function we must load PC with the
-	// address to the next function in order to exit
-	__asm volatile ("BX LR");
+		__asm volatile ("MRS R0, PSP");
+		// Save the context of current task
+		// Store Multiple Register, decrement before (STMBD)
+		__asm volatile ("STMDB R0!, {R4-R11}");
+		// Save LR before using BL instruction
+		__asm volatile ("PUSH {LR}");
+		// Save the current value of PSP
+		__asm volatile ("BL save_psp_value");
+		// Load the next task
+		__asm volatile ("BL update_next_task");
+		// Get the new task PSP
+		__asm volatile ("BL get_psp_value");
+		// Retrieve the Stack Frame 2 to the new task
+		__asm volatile ("LDMIA R0!, {R4-R11}");
+		// Update PSP
+		__asm volatile ("MSR PSP, R0");
+		// Retrieve the saved LR value
+		__asm volatile ("POP {LR}");
+		// In a naked function we must load PC with the
+		// address to the next function in order to exit
+		__asm volatile ("BX LR");
 }
 
 void HardFault_Handler(void)
