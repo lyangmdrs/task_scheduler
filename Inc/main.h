@@ -52,6 +52,11 @@
 #define TASK_BLOCKED_STATE 0xFF
 /* Constants Definitions */
 
+#define INTERRUPT_DISABLE() __asm volatile("MOV R0,#0x1"); \
+							__asm volatile("MSR PRIMASK,R0")
+#define INTERRUPT_ENABLE()	__asm volatile("MOV R0,#0x0"); \
+							__asm volatile("MSR PRIMASK,R0")
+
 //-----------------------------------------------------------------------------//
 
 void enable_processors_fauts(void);

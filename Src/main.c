@@ -224,7 +224,7 @@ void taskHandler1(void)
 	for(;;)
 	{
 		printf("This is task 1!\n");
-		task_delay(10);
+		task_delay(100);
 	}
 }
 
@@ -233,7 +233,7 @@ void taskHandler2(void)
 	for(;;)
 	{
 		printf("This is task 2!\n");
-		task_delay(20);
+		task_delay(200);
 	}
 }
 
@@ -242,7 +242,7 @@ void taskHandler3(void)
 	for(;;)
 	{
 		printf("This is task 3!\n");
-		task_delay(30);
+		task_delay(300);
 	}
 }
 
@@ -251,7 +251,7 @@ void taskHandler4(void)
 	for(;;)
 	{
 		printf("This is task 4!\n");
-		task_delay(40);
+		task_delay(400);
 	}
 }
 
@@ -269,9 +269,26 @@ void schedule(void)
 
 void task_delay(uint32_t tick_count)
 {
-	user_tasks[current_task].block_count = global_tick_count + tick_count;
-	user_tasks[current_task].current_state = TASK_BLOCKED_STATE;
-	schedule();
+	// Disable Interrupts
+	/*
+	 * Since user_tasks is as global variable and we will be modifying it in
+	 * this function, its important don't get interrupted here.
+	 */
+
+	INTERRUPT_DISABLE();
+
+	if(current_task)
+	{
+		user_tasks[current_task].block_count = global_tick_count + tick_count;
+		user_tasks[current_task].current_state = TASK_BLOCKED_STATE;
+		schedule();
+	}
+
+	/*
+	 * Now, we can enable the interruptions again.
+	 */
+
+	INTERRUPT_ENABLE();
 }
 
 void update_global_tick_count(void)
